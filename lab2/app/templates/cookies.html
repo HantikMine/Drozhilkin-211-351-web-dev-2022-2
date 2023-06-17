@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Cookie
+                </th>
+                <th>
+                    Value
+                </th>
+            </tr>        
+        </thead>
+        <tbody>
+            {% for cookie_name, cookie_value in request.cookies.items() %}
+            <tr>    
+                <td>
+                    {{cookie_name}}
+                </td>
+                <td>
+                    {{cookie_value}}
+                </td>
+                    
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
