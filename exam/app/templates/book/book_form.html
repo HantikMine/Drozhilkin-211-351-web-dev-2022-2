@@ -1,0 +1,51 @@
+{% macro book_form(genres, url, current_user, new_genres, book = {}) %}
+<div class="container">
+  <form enctype="multipart/form-data" action="{{url}}" method="post" class="row justify-content-center">
+    <div class="col-sm-10 mb-3">
+      <label for="inputName" class="form-label"><b>Название</b></label>
+      <input type="text" class="form-control" id="inputName" name="title" value="{{ book.title or '' }}">
+    </div>
+    {% if request.endpoint == "new_book" or request.endpoint == "create_book" %}
+    <div class="col-md-6 d-flex flex-column mb-3">
+      <label for="cover_img" class="form-label">Обложка</label>
+      <input class="form-control" type="file" name="cover_img" id="cover_img">
+    </div>
+    {% endif %}
+    <div class="col-sm-10 mb-3">
+      <label for="inputYear" class="form-label"><b>Год написания</b></label>
+      <input type="text" class="form-control" id="inputYear" name="year" value="{{ book.year or '' }}">
+    </div>
+    <div class="col-sm-10 mb-3">
+      <label for="inputDesc" class="form-label"><b>Описание</b></label>
+      <textarea type="text" class="form-control" id="inputDesc" name="short_desc"
+        value="{{ book.description or '' }}">{{ book.description or '' }}</textarea>
+    </div>
+    <div class="col-sm-10 mb-3">
+      <label for="inputHouse" class="form-label"><b>Издательство</b></label>
+      <input type="text" class="form-control" id="inputHouse" name="publisher" value="{{ book.publisher or '' }}">
+    </div>
+    <div class="col-sm-10 mb-3">
+      <label for="inputVolume" class="form-label"><b>Количество страниц</b></label>
+      <input type="text" class="form-control" id="inputVolume" name="size" value="{{ book.size or '' }}">
+    </div>
+    <div class="col-sm-10 mb-3">
+      <label for="inputAuthor" class="form-label"><b>Автор</b></label>
+      <input type="text" class="form-control" id="inputAuthor" name="author" value="{{ book.author or '' }}">
+    </div>
+    <div class="col-sm-10 mb-3">
+      <label for="inputGenres" class="form-label"><b>Жанр(ы)</b></label>
+      <select multiple class="form-select" aria-label="Default select example" name="genre_id">
+        {% for genre in genres %}
+        <option {% if genre.id | string in new_genres %} selected {% endif %} value="{{ genre.id }}">{{
+          genre.name
+          }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-10 text-center">
+      <button type="submit" class="btn border">Сохранить</button>
+    </div>
+  </form>
+</div>
+<script src="{{ url_for('static', filename='easyMDE.js')}}"></script>
+{% endmacro %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div>
+    <form enctype="multipart/form-data" action="{{url_for('book_review', book_id=book_id)}}" method="post">
+        <div class="container">
+            <div class="d-flex flex-column">
+                <h5>Оценка</h5>
+                <select class="form-select" aria-label="Default select example" name="grade">
+                    <option selected value="5">Отлично</option>
+                    <option value="4">Хорошо</option>
+                    <option value="3">Удовлетворительно</option>
+                    <option value="2">Неудовлетворительно</option>
+                    <option value="1">Плохо</option>
+                    <option value="0">Ужасно</option>
+                </select>
+            </div>
+            <div class="row mb-3 py-3">
+                <h5>Текст рецензии</h5>
+                <div>
+                    <textarea type="text" class="form-control" id="inputDesc" name="short_desc" value=""></textarea>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-info">Сохранить
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="{{ url_for('static', filename='easyMDE.js')}}"></script>
+{% endblock %}

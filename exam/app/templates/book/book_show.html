@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" />
+<div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div>
+          <div class="d-flex flex-wrap px-3">
+            <img class="card-img-top" style="width: 30rem; " src="{{ url_for('static', filename='images/' + book.file_name) }}" alt="Card image cap">
+          </div>
+          <h3 class="row gy-2">
+            <div class="h1">{{book.title}}</div>
+            <div><b>Автор:</b> {{book.author}}<br></div>
+            <div><b>Жанр(ы):</b> {{book.genres}}<br></div>
+            <div>
+              <div><b>Краткое описание:</b><br></div>
+              <div>{{book.description}}</div>
+            </div>
+            <div><b>Первая публикация:</b> {{book.year}}</div>
+            {% if book.avg_review_grade!=None%}
+            <div><b>Средняя оценка:</b> {{book.avg_review_grade}}</div>
+            {% else %}
+            <div><b>Средняя оценка:</b> не стоит</div>
+            {% endif %}
+            <div><b>Количество рецензий:</b> {{book.reviews_count}}</div>
+            <div><b>Издательство:</b> {{book.publisher}}</div>
+            <div><b>Количество страниц:</b> {{book.size}}</div>
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+{% if current_user.is_authenticated %}
+{% if your_review!=None %}
+<div class="container my-3">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h3 class="fw-bold">Ваша рецензия</h3>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <div class="media">
+                        <img src="{{ url_for('static', filename='images/profile.jpg') }}" width="50" height="50" class="rounded-circle me-3" alt="Profile Image">
+                        <div class="media-body">
+                            <h5 class="mt-0">{{current_user.getFullName()}}</h5>
+                            <p class="text-muted mb-2">{{your_review.grade}} <i class="bi bi-star-fill text-warning"></i></p>
+                            <p class="mb-0">{{your_review.text}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="d-flex justify-content-center">
+    <a class="btn btn btn-info flex-wrap d-inline-flex" href="{{url_for('book_review', book_id=book.id, all_reviews=all_reviews, your_review=your_review)}}">Написать рецензию</a>
+</div>
+{% endif %}
+{% else %}
+{% endif %}
+{%if all_reviews|length != 0%}
+<div class="container py-5">
+    <div class="row">
+      <div class="col">
+        <h3 class="fw-bold mb-4">Рецензии:</h3>
+        {% for review in all_reviews %}
+        <div class="border border-2 border-secondary mb-4 p-3 rounded-3">
+          <div class="d-flex align-items-center mb-3">
+            <img src="{{ url_for('static', filename='images/profile.jpg') }}" width="30" height="30" alt="Profile Image" class="me-2 rounded-circle">
+            <div>
+              <h5 class="mb-0">{{review.full_name}}</h5>
+              <div>
+                {% for i in range(review.grade) %}
+                <i class="bi bi-star-fill text-warning"></i>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <p class="mb-0">{{review.text}}</p>
+        </div>
+        {%endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}    
+{% endblock %}

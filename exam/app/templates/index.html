@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% from "pagination.html" import pagination %}
+{% block content %}
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" />
+<div class="mb-5 mt-3">
+  <div class="d-flex flex-column justify-content-center">
+      {% for book in books %}
+      <div class="d-flex py-3 px-3 justify-content-center">
+          <div style="width: 20rem;">
+              <div>
+                  <img class="card-img-top" src="{{ url_for('static', filename='images/' + book.file_name) }}" alt="Card image cap">
+                  <div class="text-center">
+                      <div class="h4">{{book.title}}</div>
+                      <div><b>Жанр(ы):</b> {{book.genres}}</div>
+                      <div><b>Дата издания:</b> {{book.year}}</div>
+                      {% if book.avg_review_grade!=None%}
+                      <div><b>Средняя оценка по рецензиям:</b> {{book.avg_review_grade}}</div>
+                      {% else %}
+                      <div><b>Средняя оценка по рецензиям:</b> no</div>
+                      {% endif %}
+                      <div><b>Количество рецензий:</b> {{book.reviews_count}}</div>
+                  </div>
+              </div>
+          </div>
+          <div class="px-4 me-4">
+            <div class="btn-group-vertical action-btns">
+              <a href="{{ url_for('book_show', book_id = book.id) }}" class="btn btn-outline-primary btn-lg">Посмотреть</a>
+              {% if current_user.is_authenticated %}
+              {% if current_user.is_moderator() %}
+              <a href="{{ url_for('book_edit', book_id = book.id) }}" class="btn btn-outline-secondary btn-lg">Изменить</a>
+              {% endif %}
+              {% if current_user.is_administrator() %}
+              <button type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                  data-url="{{ url_for('book_delete', book_id = book.id) }}"
+                  data-title="{{ book.name }}">Удалить</button>
+              {% endif %}
+              {% endif %}
+           </div> 
+          </div>   
+      </div>{% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog justify-content-center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5">Удаление книги</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите удалить книгу?
+          <span class="delete-book-title"></span>
+          <form action="" class="d-none" method="POST">
+            <input type="submit" id="submit-delete">
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+          <label for="submit-delete" class="btn btn-danger mb-0">Да</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='delete.js')}}"></script>
+{{pagination(page, page_count, request.endpoint)}}
+
+{% endblock %}
