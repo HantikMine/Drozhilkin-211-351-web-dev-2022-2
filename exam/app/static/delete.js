@@ -5,5 +5,5 @@ deleteModalEl.addEventListener('show.bs.modal', function (event) {
     let form = this.querySelector('form');
     form.action = url; 
     let span = this.querySelector('.delete-book-title');
-    span.textContent = event.relatedTarget.dataset.login;
+    span.textContent = event.relatedTarget.dataset.title;
 });

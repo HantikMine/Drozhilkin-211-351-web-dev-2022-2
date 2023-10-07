@@ -4,12 +4,21 @@ from mysql_db import MySQL
 import math
 import bleach
 import os
+import hashlib
+import mimetypes
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 application = app
 
 BOOKS_NUM = 3
-ALL_PARAMS = ["title", "short_desc", "year", "publisher", "author", "size"]
+ALL_PARAMS = ["title", "description", "year", "publisher", "author", "size"]
+ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg'}
+DIRECTORY_PATH = os.path.join(os.getcwd(), 'static', 'images')
+
+def valid_files(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 app.config.from_pyfile('config.py')
 db = MySQL(app)
@@ -27,6 +36,15 @@ def downloadBook(book_id):
         cursor.execute(our_query, (book_id,))
         req_book = cursor.fetchone()
     return req_book
+
+class Book:
+    def __init__(self):
+        self.title = None
+        self.description = None
+        self.year = None
+        self.publisher = None
+        self.author = None
+        self.size = None
 
 @app.route('/')
 def index():
@@ -57,49 +75,70 @@ def index():
     page_nums = math.ceil(db_nums / BOOKS_NUM)
     return render_template('index.html',books = db_books, page = page,page_count = page_nums)
 
-@app.route('/book/<int:book_id>/book_delete', methods=['POST'])
+@app.route('/books/<int:book_id>/delete', methods=['POST'])
 @login_required
 @check_rights('delete')
 def book_delete(book_id):
-    req_book = downloadBook(book_id=book_id)
+   
+    book = downloadBook(book_id=book_id)
     try:
-        our_query = """
-                SELECT covers.file_name FROM book JOIN covers ON book.covers_id = covers.id WHERE book.id = %s
+        query = """
+               SELECT COUNT(*) AS count_books
+               FROM book
+               WHERE covers_id = (SELECT covers_id FROM book WHERE id = %s);
         """
         with db.connection.cursor(named_tuple = True) as cursor:
-                    cursor.execute(our_query,(book_id,)) 
-                    cover_name = cursor.fetchone().file_name
-        directory = os.getcwd()
-        file_path = os.path.join(directory, 'static', 'images', cover_name)
-        os.remove(file_path) 
-        our_query ="""
-                DELETE FROM book WHERE id=%s;
+                    cursor.execute(query,(book_id,)) 
+                    nums_of_cover = cursor.fetchone().count_books
+        if nums_of_cover==1:         
+            query = """
+                    SELECT covers.file_name FROM book JOIN covers ON book.covers_id = covers.id WHERE book.id = %s
+            """
+            with db.connection.cursor(named_tuple = True) as cursor:
+                        cursor.execute(query,(book_id,)) 
+                        cover_name = cursor.fetchone().file_name
+                        file_path = os.path.join(DIRECTORY_PATH, cover_name)
+            query = """
+                   DELETE FROM covers
+                   WHERE id = (SELECT covers_id FROM book WHERE id = %s);
+            """
+            with db.connection.cursor(named_tuple = True) as cursor:
+                        cursor.execute(query,(book_id,)) 
+                        db.connection.commit()        
+        query ="""
+                DELETE FROM book
+                WHERE id = %s;
         """
         with db.connection.cursor(named_tuple = True) as cursor:
-                    cursor.execute(our_query,(book_id,)) 
+                    cursor.execute(query,(book_id,)) 
                     db.connection.commit()
-        flash(f'Книга {req_book.title} успешно удалена', 'success')
+        if nums_of_cover==1:
+             os.remove(file_path) 
+        flash(f'Книга {book.title} успешно удалена', 'success')
     except:
+        db.connection.rollback()
         flash('Ошибка при удалении', 'danger')    
     return redirect(url_for('index'))   
 
 def downloadGenres(book_id):
-    our_query = """
-                SELECT genres.id, genres.name FROM book
-                JOIN book_has_genres ON book.id = book_has_genres.book_id
-                JOIN genres ON book_has_genres.genres_id = genres.id
-                WHERE book.id = %s
-    """
-    with db.connection.cursor(named_tuple = True) as cursor:
-        cursor.execute(our_query, (book_id,))
-        genres = cursor.fetchall()
-    our_query = """
+    tmp_genres = {}
+    if book_id!=-1:
+        query = """
+                    SELECT genres.id, genres.name FROM book
+                    JOIN book_has_genres ON book.id = book_has_genres.book_id
+                    JOIN genres ON book_has_genres.genres_id = genres.id
+                    WHERE book.id = %s
+        """
+        with db.connection.cursor(named_tuple = True) as cursor:
+            cursor.execute(query, (book_id,))
+            genres = cursor.fetchall()
+        tmp_genres = [ str(genre.id) for genre in genres]
+    query = """
                 SELECT * FROM genres
     """
     with db.connection.cursor(named_tuple = True) as cursor:
-        cursor.execute(our_query)
+        cursor.execute(query)
         all_used_genres = cursor.fetchall()
-    tmp_genres = [ str(genre.id) for genre in genres]
     return all_used_genres, tmp_genres
 
 @app.route('/book/<int:book_id>/book_edit', methods=['GET'])
@@ -125,11 +164,11 @@ def book_review(book_id):
         grade = request.form.get('grade')
         params = {
             "grade": grade,
-            "text": request.form.get('short_desc'),
+            "text": request.form.get('description'),
             "users_id": current_user.id,
             "book_id": book_id
         }
-        if len(params["text"])==0:
+        if params["text"]==None:
             flash("Тест рецензии не должен быть пустым", "warning")
             return redirect(url_for('book_review', book_id=book_id))
         for param in params:
@@ -164,7 +203,7 @@ def book_update(book_id):
     """
     try:
         with db.connection.cursor(named_tuple = True) as cursor:
-                    cursor.execute(our_query,(now_params['title'],now_params['short_desc'],now_params['author'],now_params['year'],now_params['size'],now_params['publisher'],book_id)) 
+                    cursor.execute(our_query,(now_params['title'],now_params['description'],now_params['author'],now_params['year'],now_params['size'],now_params['publisher'],book_id)) 
                     db.connection.commit()
         our_query = """
                 DELETE FROM book_has_genres WHERE book_id = %s;
@@ -192,6 +231,11 @@ def downloadParams(names_list):
         res[name] = request.form.get(name) or None 
     return res
 
+def added_new_params(book_obj, params):
+    for param in params:
+        if params[param]!=None:
+            setattr(book_obj, param, params[param])
+
 @app.route('/book/<int:book_id>')
 def book_show(book_id):
         our_query = """SELECT 
@@ -213,6 +257,79 @@ def book_show(book_id):
             db_book = cursor.fetchone() 
         review_yours, reviews_alls = downloadRev(book_id=book_id)   
         return render_template('book/book_show.html', book=db_book, your_review=review_yours, all_reviews=reviews_alls)
+
+@app.route('/book_add', methods=['GET'])
+@login_required
+@check_rights("create")    
+def book_add():
+    all_used_genres,_ = downloadGenres(-1)
+    return render_template("book/book_new.html", genres = all_used_genres,  book={})
+
+@app.route('/book_create', methods=['POST'])
+@login_required
+@check_rights("create")    
+def book_create():
+    all_used_genres,_ = downloadGenres(-1)
+    
+    new_genres = request.form.getlist('genre_id')
+    now_params = downloadParams(ALL_PARAMS)
+    book = Book()
+    added_new_params(book,now_params)
+    file = request.files["cover_img"]
+    for param in now_params:
+        if now_params[param]==None or (file.filename=="") or len(new_genres)==0:
+            print("test")
+            flash("Указаны не все параметры", "danger")
+            return render_template("book/book_new.html", genres = all_used_genres, book=book, new_genres=new_genres)
+        now_params[param] = bleach.clean(now_params[param])
+    md5_hex = hashlib.md5(file.read()).hexdigest()
+    file.seek(0)
+    try:
+        query = """
+                SELECT * FROM covers WHERE MD5_hash = %s
+        """
+        with db.connection.cursor(named_tuple = True) as cursor:
+                    cursor.execute(query,(md5_hex,)) 
+                    cover = cursor.fetchone()            
+        if cover==None:
+             if valid_files(file.filename):
+                  filename = secure_filename(file.filename)
+                  mime_type, _ = mimetypes.guess_type(file.filename)
+                  query = """
+                    INSERT INTO covers (file_name, MIME_type, MD5_hash) VALUES (%s, %s, %s);
+                    """
+                  with db.connection.cursor(named_tuple = True) as cursor:
+                        cursor.execute(query,(filename,mime_type,md5_hex)) 
+                        db.connection.commit()  
+                        commit_cover_Id = cursor.lastrowid
+             else:
+                  flash('Недопустимое расширение файла', 'danger')  
+                  return render_template("book/book_new.html", genres = all_used_genres, book=book,  new_genres=new_genres)
+        else:
+             commit_cover_Id = cover.id               
+        query = """
+                INSERT INTO book (title, description, author, year, size, publisher, covers_id) VALUES (%s, %s, %s, %s, %s, %s, %s);
+                """
+        with db.connection.cursor(named_tuple = True) as cursor:
+            cursor.execute(query,(now_params['title'],now_params['description'],now_params['author'],now_params['year'],now_params['size'],now_params['publisher'], commit_cover_Id)) 
+            db.connection.commit() 
+            book_id = cursor.lastrowid     
+            for genre in new_genres:
+                query = """
+                        INSERT INTO book_has_genres (book_id, genres_id) VALUES (%s, %s);
+                        """
+                with db.connection.cursor(named_tuple = True) as cursor:
+                        cursor.execute(query,(book_id,genre)) 
+                        db.connection.commit()     
+        if cover==None:
+             file.save(os.path.join(DIRECTORY_PATH, filename))           
+            
+    except:
+        db.connection.rollback()
+        flash('Ошибка при добавлении', 'danger')  
+        return render_template("book/book_new.html", genres = all_used_genres, book=book,  new_genres=new_genres)  
+    return redirect(url_for('book_show', book_id=book_id))
+
 
 def downloadRev(book_id):
         review_yours = None

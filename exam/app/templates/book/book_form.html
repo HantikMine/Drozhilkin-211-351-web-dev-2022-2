@@ -5,10 +5,12 @@
       <label for="inputName" class="form-label"><b>Название</b></label>
       <input type="text" class="form-control" id="inputName" name="title" value="{{ book.title or '' }}">
     </div>
-    {% if request.endpoint == "new_book" or request.endpoint == "create_book" %}
-    <div class="col-md-6 d-flex flex-column mb-3">
-      <label for="cover_img" class="form-label">Обложка</label>
-      <input class="form-control" type="file" name="cover_img" id="cover_img">
+    {% if request.endpoint == "book_add" or request.endpoint == "book_create" %}
+    <div class="col-sm-10 mb-3">
+      <label for="cover_img" class="col-sm-2 col-form-label"><b>Обложка</b></label>
+      <div class="col-sm-10">
+        <input class="form-control" type="file" name="cover_img" id="cover_img">
+      </div>
     </div>
     {% endif %}
     <div class="col-sm-10 mb-3">
@@ -17,7 +19,7 @@
     </div>
     <div class="col-sm-10 mb-3">
       <label for="inputDesc" class="form-label"><b>Описание</b></label>
-      <textarea type="text" class="form-control" id="inputDesc" name="short_desc"
+      <textarea type="text" class="form-control" id="inputDesc" name="description"
         value="{{ book.description or '' }}">{{ book.description or '' }}</textarea>
     </div>
     <div class="col-sm-10 mb-3">

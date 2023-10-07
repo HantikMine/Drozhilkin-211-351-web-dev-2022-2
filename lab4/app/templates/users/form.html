@@ -1,0 +1,104 @@
+{% macro user_form(roles, url, user = {}, errors = {}) %}
+<form action="{{url}}" method="post">
+  <div class="row mb-3">
+    <label for="inputLogin" class="col-sm-2 col-form-label">Логин</label>
+    <div class="col-sm-10 input-group has-validation">
+      <input type="text"
+        class="form-control {% if errors.get('login') %}is-invalid{% endif %} {% if request.method == 'POST' and not errors.get('login') %}is-valid{% endif %}"
+        id="inputLogin" name="login" value="{{ user.login or '' }}"
+        aria-describedby="inputGroupPrepend3 validationLoginFeedback">
+      {% if errors.get("login") %}
+      <div id="validationLoginFeedback" class="invalid-feedback">
+        {{ errors.get("login") }}
+      </div>
+      {% endif %}
+      {% if request.method == 'POST' and not errors.get("login") %}
+      <div class="valid-feedback">
+        Всё правильно!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if request.endpoint == "new_user" or request.endpoint == "create_user" %}
+  <div class="row mb-3">
+    <label for="inputPassword" class="col-sm-2 col-form-label">Пароль</label>
+    <div class="col-sm-10 input-group has-validation">
+      <input type="password"
+        class="form-control {% if errors.get('password') %}is-invalid{% endif %} {% if request.method == 'POST' and not errors.get('password') %}is-valid{% endif %}"
+        id="inputPassword" name="password" value="{{ user.password or '' }}"
+        aria-describedby="inputGroupPrepend3 validationPasswordFeedback">
+      {% if errors.get("password") %}
+      <div id="validationPasswordFeedback" class="invalid-feedback">
+        {{ errors.get("password") }}
+      </div>
+      {% endif %}
+      {% if request.method == 'POST' and not errors.get("password") %}
+      <div class="valid-feedback">
+        Всё правильно!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="row mb-3">
+    <label for="inputFirstName" class="col-sm-2 col-form-label">Имя</label>
+    <div class="col-sm-10 input-group has-validation">
+      <input type="text"
+        class="form-control {% if errors.get('first_name') %}is-invalid{% endif %} {% if request.method == 'POST' and not errors.get('first_name') %}is-valid{% endif %}"
+        id="inputFirstName" name="first_name" value="{{ user.first_name or '' }}"
+        aria-describedby="inputGroupPrepend3 validationFirstNameFeedback">
+      {% if errors.get("first_name") %}
+      <div id="validationFirstNameFeedback" class="invalid-feedback">
+        {{ errors.get("first_name") }}
+      </div>
+      {% endif %}
+      {% if request.method == 'POST' and not errors.get("first_name") %}
+      <div class="valid-feedback">
+        Всё правильно!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputLastName" class="col-sm-2 col-form-label">Фамилия</label>
+    <div class="col-sm-10 input-group has-validation">
+      <input type="text"
+        class="form-control {% if errors.get('last_name') %}is-invalid{% endif %} {% if request.method == 'POST' and not errors.get('last_name') %}is-valid{% endif %}"
+        id="inputLastName" name="last_name" value="{{ user.last_name or '' }}"
+        aria-describedby="inputGroupPrepend3 validationLastNameFeedback">
+      {% if errors.get("last_name") %}
+      <div id="validationLastNameFeedback" class="invalid-feedback">
+        {{ errors.get("last_name") }}
+      </div>
+      {% endif %}
+      {% if request.method == 'POST' and not errors.get("last_name") %}
+      <div class="valid-feedback">
+        Всё правильно!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputMiddleName" class="col-sm-2 col-form-label">Отчество</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputMiddleName" name="middle_name"
+        value="{{ user.middle_name or '' }}">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputMiddleName" class="col-sm-2 col-form-label">Роль</label>
+    <div class="col-sm-10">
+      <select class="form-select" aria-label="Default select example" name="role_id">
+        <option value="">Не выбрано</option>
+        {% for role in roles %}
+        <option {% if user.role_id | string==role.id | string %} selected {% endif %} value="{{ role.id }}">{{ role.name
+          }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Сохранить
+  </button>
+</form>
+{% endmacro %}

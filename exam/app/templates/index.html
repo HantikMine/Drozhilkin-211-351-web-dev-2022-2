@@ -34,7 +34,7 @@
               {% if current_user.is_administrator() %}
               <button type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#deleteModal"
                   data-url="{{ url_for('book_delete', book_id = book.id) }}"
-                  data-title="{{ book.name }}">Удалить</button>
+                  data-title="{{ book.title }}">Удалить</button>
               {% endif %}
               {% endif %}
            </div> 
@@ -42,7 +42,14 @@
       </div>{% endfor %}
   </div>
 </div>
-
+{% if current_user.is_authenticated %}
+{% if current_user.is_administrator() %}
+<div class="d-flex justify-content-center py-3">
+  <div btn-group-vertical action-btns>
+    <a href="{{ url_for('book_add') }}" class="btn btn-dark">Добавить</a>
+  </div>
+{% endif %}
+{% endif %}  
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog justify-content-center">
       <div class="modal-content">
@@ -51,8 +58,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Вы уверены, что хотите удалить книгу?
-          <span class="delete-book-title"></span>
+          Вы уверены, что хотите удалить книгу <span class="delete-book-title"></span>?
           <form action="" class="d-none" method="POST">
             <input type="submit" id="submit-delete">
           </form>

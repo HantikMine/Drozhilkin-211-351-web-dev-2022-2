@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% from "book/book_form.html" import book_form %}
+
+{% block content %}
+<h1 class="text-center py-3">Добавление книги</h1>
+{{book_form(genres, url_for('book_create'), current_user, new_genres, book)}}
+
+{% endblock %}
